@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"log"
 	"os"
@@ -19,8 +18,6 @@ import (
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
 )
-
-const dialTimeout = 5 * time.Second
 
 func main() {
 
@@ -70,7 +67,7 @@ func main() {
 	s := service.NewService(r).WithDependency("client", cli).WithLogHarbour(lh).WithDependency("appConfig", appConfig)
 	s.RegisterRoute(http.MethodGet, "/configget", configsvc.Config_get)
 	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list)
-	s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set)
+	// s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set) // aniket old set need to update from @tushar
 
 	r.Run(":" + appConfig.AppServerPort)
 	if err != nil {
