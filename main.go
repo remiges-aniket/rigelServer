@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,35 +11,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/remiges-aniket/configsvc"
-	"github.com/remiges-aniket/etcd"
-	"github.com/remiges-aniket/rigel"
 	"github.com/remiges-aniket/utils"
 	"github.com/remiges-tech/alya/config"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
+	"github.com/remiges-tech/rigel"
+	"github.com/remiges-tech/rigel/etcd"
 )
 
 func main() {
 
 	appConfig, environment := setConfigEnvironment(utils.DevEnv)
-
-	// logger
-	// Open a file for logging.
+	// Logger setup
 	logFile, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer logFile.Close()
-
-	// Create a fallback writer that uses the file as the primary writer and stdout as the fallback.
 	fallbackWriter := logharbour.NewFallbackWriter(logFile, os.Stdout)
-	lctx := logharbour.NewLoggerContext(logharbour.Debug0)
-	lh := logharbour.NewLogger(lctx, "Rigel", fallbackWriter)
-	lh.WithPriority(logharbour.Info)
+	lctx := logharbour.NewLoggerContext(logharbour.Info)
+	l := logharbour.NewLogger(lctx, "rigel", fallbackWriter)
 
-	// Rigel
-	// error types
 	// Open the error types file
 	file, err := os.Open("./errortypes.yaml")
 	if err != nil {
@@ -59,15 +52,32 @@ func main() {
 		fmt.Print("error", err)
 		return
 	}
+	allkeys, err := cli.GetWithPrefix(context.Background(), "/remiges/rigel/")
+	if err != nil {
+		log.Fatalf("etcd interaction failed: %v", err)
+	}
+	fmt.Println("allkeys", allkeys)
 
-	rigel.NewWithStorage(cli)
+	rTree := utils.NewNode("")
+	for k, v := range allkeys {
+
+		rTree.AddPath(k, v)
+	}
+
+	rigelClient := rigel.NewWithStorage(cli)
 
 	// Services
 	// Config Services
-	s := service.NewService(r).WithDependency("client", cli).WithLogHarbour(lh).WithDependency("appConfig", appConfig)
+	s := service.NewService(r).
+		WithDependency("client", cli).
+		WithLogHarbour(l).
+		WithDependency("appConfig", appConfig).
+		WithDependency("rTree", rTree).
+		WithDependency("r", rigelClient)
 	s.RegisterRoute(http.MethodGet, "/configget", configsvc.Config_get)
 	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list)
-	// s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set) // aniket old set need to update from @tushar
+	s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set)
+	s.RegisterRoute(http.MethodPost, "/configupdate", configsvc.Config_update)
 
 	r.Run(":" + appConfig.AppServerPort)
 	if err != nil {
