@@ -11,13 +11,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/remiges-aniket/configsvc"
+	"github.com/remiges-aniket/etcd"
+	"github.com/remiges-aniket/rigel"
+	"github.com/remiges-aniket/schemaserv"
 	"github.com/remiges-aniket/utils"
 	"github.com/remiges-tech/alya/config"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
-	"github.com/remiges-tech/rigel"
-	"github.com/remiges-tech/rigel/etcd"
 )
 
 func main() {
@@ -45,39 +46,54 @@ func main() {
 	if environment == utils.DevEnv {
 		r.Use(corsMiddleware())
 	}
-	// Database connection
-	cli, err := etcd.NewEtcdStorage([]string{fmt.Sprint(appConfig.DBHost + ":" + strconv.Itoa(appConfig.DBPort))})
+
+	// Create a new EtcdStorage instance
+	etcdStorage, err := etcd.NewEtcdStorage([]string{fmt.Sprint(appConfig.DBHost + ":" + strconv.Itoa(appConfig.DBPort))})
 
 	if err != nil {
-		fmt.Print("error", err)
+		log.Fatalf("Failed to create EtcdStorage: %v", err)
+		wscutils.NewErrorResponse("Failed to create EtcdStorage")
 		return
 	}
-	allkeys, err := cli.GetWithPrefix(context.Background(), "/remiges/rigel/")
+
+	//Create a new Rigel instance
+	rigelClient := rigel.NewWithStorage(etcdStorage)
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), utils.DIALTIMEOUT)
+	defer cancel()
+
+	// Get all keys from etcd
+	allkeys, err := etcdStorage.GetWithPrefix(ctx, "/")
 	if err != nil {
 		log.Fatalf("etcd interaction failed: %v", err)
+		return
 	}
-	fmt.Println("allkeys", allkeys)
 
+	// Build a Rigel STree
 	rTree := utils.NewNode("")
 	for k, v := range allkeys {
-
 		rTree.AddPath(k, v)
 	}
 
-	rigelClient := rigel.NewWithStorage(cli)
-
 	// Services
-	// Config Services
+
 	s := service.NewService(r).
-		WithDependency("client", cli).
 		WithLogHarbour(l).
 		WithDependency("appConfig", appConfig).
 		WithDependency("rTree", rTree).
-		WithDependency("r", rigelClient)
+		WithDependency("etcd", etcdStorage).
+		WithDependency("rigel", rigelClient)
+
+	// Config Services
 	s.RegisterRoute(http.MethodGet, "/configget", configsvc.Config_get)
 	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list)
 	s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set)
 	s.RegisterRoute(http.MethodPost, "/configupdate", configsvc.Config_update)
+
+	// Schema Services
+	s.RegisterRoute(http.MethodGet, "/getschema", schemaserv.HandleGetSchemaRequest)
+	s.RegisterRoute(http.MethodGet, "/schemalist", schemaserv.HandleGetSchemaListRequest)
 
 	r.Run(":" + appConfig.AppServerPort)
 	if err != nil {

@@ -64,7 +64,13 @@ func Config_get(c *gin.Context, s *service.Service) {
 	lh := s.LogHarbour
 	lh.Log("Config_get request received")
 
-	client := s.Dependencies["client"].(*etcd.EtcdStorage)
+	client, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
+	if !ok {
+		field := "etcd"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		return
+	}
+
 	var response getConfigResponse
 	var queryParams utils.GetConfigRequestParams
 	err := c.ShouldBindQuery(&queryParams)
@@ -96,7 +102,12 @@ func Config_list(c *gin.Context, s *service.Service) {
 	lh := s.LogHarbour
 	lh.Log("v request received")
 
-	client := s.Dependencies["client"].(*etcd.EtcdStorage)
+	client, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
+	if !ok {
+		field := "etcd"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		return
+	}
 	var response getConfigResponse
 	var queryParams utils.GetConfigRequestParams
 	err := c.ShouldBindQuery(&queryParams)

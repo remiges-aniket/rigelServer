@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/remiges-tech/alya/wscutils"
 )
 
 type Entity int
@@ -14,6 +15,11 @@ const (
 	Country Entity = iota
 	State
 	PostalCode
+)
+
+const (
+	DIALTIMEOUT = 5 * time.Second
+	RIGELPREFIX = "/remiges/rigel"
 )
 
 type Status int
@@ -196,7 +202,8 @@ func (n *Node) Ls(path string) []*Node {
 		}
 		child, exists := current.Children[part]
 		if !exists {
-			fmt.Errorf("%v not valid child", part)
+			//fmt.Errorf("%v not valid child", part)
+			wscutils.NewErrorResponse(" Insvalid child")
 		}
 		current = child
 	}
