@@ -25,10 +25,21 @@ const dialTimeout = 5 * time.Second
 func main() {
 
 	appConfig, environment := setConfigEnvironment(utils.DevEnv)
-	// Logharbour
-	lctx := logharbour.NewLoggerContext(logharbour.Info)
-	l := logharbour.NewLogger(lctx, "rigel", os.Stdout)
-	l.WithPriority(logharbour.Debug0)
+
+	// logger
+	// Open a file for logging.
+	logFile, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+
+	// Create a fallback writer that uses the file as the primary writer and stdout as the fallback.
+	fallbackWriter := logharbour.NewFallbackWriter(logFile, os.Stdout)
+	lctx := logharbour.NewLoggerContext(logharbour.Debug0)
+	lh := logharbour.NewLogger(lctx, "Rigel", fallbackWriter)
+	lh.WithPriority(logharbour.Info)
+
 	// Rigel
 	// error types
 	// Open the error types file
@@ -56,7 +67,7 @@ func main() {
 
 	// Services
 	// Config Services
-	s := service.NewService(r).WithDependency("client", cli).WithLogHarbour(l).WithDependency("appConfig", appConfig)
+	s := service.NewService(r).WithDependency("client", cli).WithLogHarbour(lh).WithDependency("appConfig", appConfig)
 	s.RegisterRoute(http.MethodGet, "/configget", configsvc.Config_get)
 	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list)
 	s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set)
