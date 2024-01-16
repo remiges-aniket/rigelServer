@@ -50,7 +50,12 @@ func Config_set(c *gin.Context, s *service.Service) {
 		return
 	}
 
-	r := s.Dependencies["r"].(*rigel.Rigel)
+	r, ok := s.Dependencies["rigel"].(*rigel.Rigel)
+	if !ok {
+		field := "etcd"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		return
+	}
 	r.WithApp(configset.App).WithModule(configset.Module).WithVersion(configset.Ver).WithConfig(configset.Config)
 	val := fmt.Sprintf("%#v", configset.Value)
 	err = r.Set(c, configset.Key, val)

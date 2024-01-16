@@ -98,7 +98,7 @@ func Default() (*Rigel, error) {
 
 // KeyExistsInSchema checks if a key exists in the schema.
 func (r *Rigel) KeyExistsInSchema(ctx context.Context, key string) (bool, error) {
-	schema, err := r.getSchema(ctx)
+	schema, err := r.GetSchema(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to get schema: %w", err)
 	}
@@ -124,7 +124,7 @@ func (r *Rigel) Set(ctx context.Context, configKey string, value string) error {
 	}
 
 	// Get the schema
-	schema, err := r.getSchema(ctx)
+	schema, err := r.GetSchema(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get schema: %w", err)
 	}
@@ -223,15 +223,24 @@ func (r *Rigel) AddSchema(ctx context.Context, schema types.Schema) error {
 	return nil
 }
 
-// getSchema retrieves a schema from the storage based on the provided schemaName and schemaVersion.
-func (r *Rigel) getSchema(ctx context.Context) (*types.Schema, error) {
+// GetSchema retrieves a schema from the storage based on the provided schemaName and schemaVersion.
+func (r *Rigel) GetSchema(ctx context.Context) (*types.Schema, error) {
+
 	// Construct the base key for the schema
 	schemaFieldsKey := getSchemaFieldsPath(r.App, r.Module, r.Version)
+	//Construct the base key for the schema description
+	schemaDescriptionKey := GetSchemaDescriptionPath(r.App, r.Module, r.Version)
+
+	description, err := r.Storage.Get(ctx, schemaDescriptionKey)
+	if err != nil {
+		return nil, err
+	}
 
 	fieldsStr, err := r.Storage.Get(ctx, schemaFieldsKey)
 	if err != nil {
 		return nil, err
 	}
+
 	var fields []types.Field
 	err = json.Unmarshal([]byte(fieldsStr), &fields)
 	if err != nil {
@@ -240,9 +249,12 @@ func (r *Rigel) getSchema(ctx context.Context) (*types.Schema, error) {
 
 	// Construct the schema
 	schema := &types.Schema{
-		Fields: fields,
+		Version:     r.Version,
+		Fields:      fields,
+		Description: description,
 	}
 
+	fmt.Println("schema", schema)
 	return schema, nil
 }
 
@@ -264,7 +276,7 @@ func (r *Rigel) getConfigValue(ctx context.Context, paramName string) (string, e
 // constructConfigMap constructs a configuration map based on the Rigel object.
 func (r *Rigel) constructConfigMap(ctx context.Context) (map[string]any, error) {
 	// Retrieve the schema
-	schema, err := r.getSchema(ctx)
+	schema, err := r.GetSchema(ctx)
 	if err != nil {
 		return nil, err
 	}
