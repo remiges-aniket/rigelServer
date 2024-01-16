@@ -3,6 +3,7 @@ module github.com/remiges-aniket
 go 1.21.3
 
 require (
+
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
