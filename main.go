@@ -87,7 +87,7 @@ func main() {
 
 	// Config Services
 	s.RegisterRoute(http.MethodGet, "/configget", configsvc.Config_get)
-	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list2)
+	s.RegisterRoute(http.MethodGet, "/configlist", configsvc.Config_list)
 	s.RegisterRoute(http.MethodPost, "/configset", configsvc.Config_set)
 	s.RegisterRoute(http.MethodPost, "/configupdate", configsvc.Config_update)
 

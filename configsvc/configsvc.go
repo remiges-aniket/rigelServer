@@ -79,42 +79,7 @@ func Config_get(c *gin.Context, s *service.Service) {
 }
 
 // Config_list: handles the GET /configlist request
-
 func Config_list(c *gin.Context, s *service.Service) {
-	lh := s.LogHarbour
-	lh.Log("v request received")
-
-	client, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
-	if !ok {
-		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
-		return
-	}
-	var response getConfigResponse
-	var queryParams utils.GetConfigRequestParams
-	err := c.ShouldBindQuery(&queryParams)
-	if err != nil {
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ERRCODE_INVALID_REQUEST, nil, err.Error())}))
-		lh.Debug0().LogActivity("error while binding json request error:", err.Error)
-		return
-	}
-
-	keyStr := utils.RIGELPREFIX + "/" + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/"
-
-	getValue, err := client.GetWithPrefix(c, keyStr)
-	if err != nil {
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ErrcodeMissing, nil, err.Error())}))
-		lh.Debug0().LogActivity("error while get data from db error:", err.Error)
-		return
-	}
-
-	// set response fields
-	bindGetConfigResponse(&response, &queryParams, getValue)
-
-	lh.Log(fmt.Sprintf("Record found: %v", map[string]any{"key with --prefix": keyStr, "value": response}))
-	wscutils.SendSuccessResponse(c, wscutils.NewSuccessResponse(response))
-}
-func Config_list2(c *gin.Context, s *service.Service) {
 	lh := s.LogHarbour
 	lh.Log("Config_list Request Received")
 
@@ -140,7 +105,7 @@ func Config_list2(c *gin.Context, s *service.Service) {
 
 	trees.Process(rTree, container)
 
-	wscutils.SendSuccessResponse(c, &wscutils.Response{Status: "success", Data: container.ResponseData, Messages: []wscutils.ErrorMessage{}})
+	wscutils.SendSuccessResponse(c, &wscutils.Response{Status: "success", Data: map[string]any{"configurations": container.ResponseData}, Messages: []wscutils.ErrorMessage{}})
 }
 
 // bindGetConfigResponse is specifically used in Cinfig_get to bing and set the response
