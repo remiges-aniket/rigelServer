@@ -13,8 +13,6 @@ import (
 	"github.com/remiges-tech/alya/wscutils"
 )
 
-const ORGANISATION_PREFIX = "/remiges/rigel/"
-
 type getConfigResponse struct {
 	App         *string  `json:"app,omitempty"`
 	Module      *string  `json:"module,omitempty"`
@@ -67,7 +65,7 @@ func Config_get(c *gin.Context, s *service.Service) {
 	client, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
 	if !ok {
 		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
 		return
 	}
 
@@ -80,7 +78,7 @@ func Config_get(c *gin.Context, s *service.Service) {
 		return
 	}
 
-	keyStr := ORGANISATION_PREFIX + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/" + *queryParams.Config
+	keyStr := utils.RIGELPREFIX + "/" + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/" + *queryParams.Config
 
 	getValue, err := client.GetWithPrefix(c, keyStr)
 	if err != nil {
@@ -105,7 +103,7 @@ func Config_list(c *gin.Context, s *service.Service) {
 	client, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
 	if !ok {
 		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
 		return
 	}
 	var response getConfigResponse
@@ -117,7 +115,7 @@ func Config_list(c *gin.Context, s *service.Service) {
 		return
 	}
 
-	keyStr := ORGANISATION_PREFIX + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/"
+	keyStr := utils.RIGELPREFIX + "/" + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/"
 
 	getValue, err := client.GetWithPrefix(c, keyStr)
 	if err != nil {

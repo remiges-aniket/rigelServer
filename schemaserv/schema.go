@@ -77,7 +77,7 @@ func HandleGetSchemaRequest(c *gin.Context, s *service.Service) {
 	if !ok {
 		str := "rigelClient"
 		lh.Debug0().LogDebug("Invalid Rigel Client Dependency:", logharbour.DebugInfo{Variables: map[string]any{"rigelClient": rigelClient}})
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &str)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &str)}))
 		return
 	}
 	client.WithApp(schemaName)
@@ -174,14 +174,14 @@ func HandleGetSchemaListRequest(c *gin.Context, s *service.Service) {
 	etcd, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
 	if !ok {
 		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
 		return
 	}
 	r := s.Dependencies["rTree"]
 	rTree, ok := r.(*utils.Node)
 	if !ok {
 		field := "rigelTree"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
 		return
 	}
 

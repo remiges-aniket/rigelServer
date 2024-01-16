@@ -4,7 +4,7 @@ const (
 
 	//error messages
 	SCHEMA_NOT_FOUND   = "schema_not_found"
-	INVALID_DEPENDENCY = "invalid_dependency"
+
 
 	// validation errors
 	APP_NAME_REQUIRED     = "App Name required"

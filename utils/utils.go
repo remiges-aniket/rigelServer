@@ -18,8 +18,9 @@ const (
 )
 
 const (
-	DIALTIMEOUT = 5 * time.Second
-	RIGELPREFIX = "/remiges/rigel"
+	DIALTIMEOUT        = 5 * time.Second
+	RIGELPREFIX        = "/remiges/rigel"
+	INVALID_DEPENDENCY = "invalid_dependency"
 )
 
 type Status int

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/remiges-aniket/utils"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
@@ -53,7 +54,7 @@ func Config_set(c *gin.Context, s *service.Service) {
 	r, ok := s.Dependencies["rigel"].(*rigel.Rigel)
 	if !ok {
 		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(INVALID_DEPENDENCY, &field)}))
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
 		return
 	}
 	r.WithApp(configset.App).WithModule(configset.Module).WithVersion(configset.Ver).WithConfig(configset.Config)
