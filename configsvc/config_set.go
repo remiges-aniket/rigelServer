@@ -9,7 +9,7 @@ import (
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
-	"github.com/remiges-tech/rigel"
+	"github.com/remiges-aniket/rigel"
 )
 
 type configset struct {
@@ -51,10 +51,13 @@ func Config_set(c *gin.Context, s *service.Service) {
 		return
 	}
 
-	r, ok := s.Dependencies["rigel"].(*rigel.Rigel)
+	// Extracting Rigel client from service dependency and initializing with values from request parameters.
+	rigelClient := s.Dependencies["rigel"]
+	r, ok := rigelClient.(*rigel.Rigel)
 	if !ok {
-		field := "etcd"
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
+		str := "rigelClient"
+		l.Debug0().LogDebug("Invalid Rigel Client Dependency:", logharbour.DebugInfo{Variables: map[string]any{"rigelClient": rigelClient}})
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &str)}))
 		return
 	}
 	r.WithApp(configset.App).WithModule(configset.Module).WithVersion(configset.Ver).WithConfig(configset.Config)
