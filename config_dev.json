@@ -1,0 +1,6 @@
+{
+    "db_conn_url": "host=localhost port=2379 sslmode=disable",
+    "db_host": "localhost",
+    "db_port": 2379,
+    "app_server_port": "8090"
+}
