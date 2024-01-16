@@ -8,10 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/remiges-aniket/etcd"
+	"github.com/remiges-aniket/trees"
 	"github.com/remiges-aniket/utils"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 )
+
+// getSchemaResponse represents the structure for outgoing  responses.
 
 type getConfigResponse struct {
 	App         *string  `json:"app,omitempty"`
@@ -26,37 +29,6 @@ type values struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
 }
-
-// Config_get: handles the GET /configget request
-// func Config_get(c *gin.Context, s *service.Service) {
-// 	lh := s.LogHarbour
-// 	lh.Log("Config_get request received")
-
-// 	client := s.Dependencies["client"].(*etcd.EtcdStorage)
-// 	var response getConfigResponse
-// 	var queryParams utils.GetConfigRequestParams
-// 	err := c.ShouldBindQuery(&queryParams)
-// 	if err != nil {
-// 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ERRCODE_INVALID_REQUEST, nil, err.Error())}))
-// 		lh.Debug0().LogActivity("error while binding json request error:", err.Error)
-// 		return
-// 	}
-
-// 	keyStr := ORGANISATION_PREFIX + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/" + *queryParams.Config
-
-// 	getValue, err := client.GetWithPrefix(c, keyStr)
-// 	if err != nil {
-// 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ErrcodeMissing, nil, err.Error())}))
-// 		lh.Debug0().LogActivity("error while get data from db error:", err.Error)
-// 		return
-// 	}
-
-// 	// set response fields
-// 	bindGetConfigResponse(&response, &queryParams, getValue)
-
-// 	lh.Log(fmt.Sprintf("Record found: %v", map[string]any{"key with --prefix": keyStr, "value": response}))
-// 	wscutils.SendSuccessResponse(c, wscutils.NewSuccessResponse(response))
-// }
 
 func Config_get(c *gin.Context, s *service.Service) {
 	lh := s.LogHarbour
@@ -73,7 +45,18 @@ func Config_get(c *gin.Context, s *service.Service) {
 	var queryParams utils.GetConfigRequestParams
 	err := c.ShouldBindQuery(&queryParams)
 	if err != nil {
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ERRCODE_INVALID_REQUEST, nil, err.Error())}))
+		var errCode string
+		var fld string
+
+		if strings.Contains(fmt.Sprint(err.Error()), "strconv.ParseInt") {
+			errCode = "only_numbers_allowed"
+			fld = "ver"
+		} else {
+			test := strings.Split(err.Error(), "'")
+			fld = strings.Split(test[1], ".")[1]
+			errCode = wscutils.ERRCODE_INVALID_REQUEST
+		}
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(errCode, &fld)}))
 		lh.Debug0().LogActivity("error while binding json request error:", err.Error)
 		return
 	}
@@ -96,6 +79,7 @@ func Config_get(c *gin.Context, s *service.Service) {
 }
 
 // Config_list: handles the GET /configlist request
+
 func Config_list(c *gin.Context, s *service.Service) {
 	lh := s.LogHarbour
 	lh.Log("v request received")
@@ -130,48 +114,34 @@ func Config_list(c *gin.Context, s *service.Service) {
 	lh.Log(fmt.Sprintf("Record found: %v", map[string]any{"key with --prefix": keyStr, "value": response}))
 	wscutils.SendSuccessResponse(c, wscutils.NewSuccessResponse(response))
 }
+func Config_list2(c *gin.Context, s *service.Service) {
+	lh := s.LogHarbour
+	lh.Log("Config_list Request Received")
 
-// Config_set: handles the POST /userset request OLD ANIKET
-// func Config_set(c *gin.Context, s *service.Service) {
-// 	lh := s.LogHarbour
-// 	lh.Log("User_get request received")
-// 	client := s.Dependencies["client"].(*clientv3.Client)
+	// Extracting etcdStorage and rigelTree from service dependency.
 
-// 	var request utils.CreateConfigRequest
+	etcd, ok := s.Dependencies["etcd"].(*etcd.EtcdStorage)
+	if !ok {
+		field := "etcd"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
+		return
+	}
+	r := s.Dependencies["rTree"]
+	rTree, ok := r.(*utils.Node)
+	if !ok {
+		field := "rigelTree"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.INVALID_DEPENDENCY, &field)}))
+		return
+	}
 
-// 	// Unmarshal JSON request into user struct
-// 	err := wscutils.BindJSON(c, &request)
-// 	if err != nil {
-// 		// l.LogActivity("Error Unmarshalling JSON to struct:", logharbour.DebugInfo{Variables: map[string]any{"Error": err.Error()}})
-// 		return
-// 	}
+	container := &trees.Container{
+		Etcd: etcd,
+	}
 
-// 	valError := wscutils.WscValidate(request, getValsForConfigCreateReqError)
-// 	if len(valError) > 0 {
-// 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, valError))
-// 		return
-// 	}
+	trees.Process(rTree, container)
 
-// 	// create key for DB using req
-// 	keyStr := ORGANISATION_PREFIX + *request.App + "/" + *request.Module + "/" + strconv.Itoa(*request.Version) + "/" + *request.Config
-
-// 	if &request.Description != nil || len(request.Description) != 0 {
-// 		fmt.Println("INSIDE DESCRIP NILL >>> keyStr:", keyStr)
-// 		ke, err := client.Put(c, keyStr+"/description", request.Description)
-// 		fmt.Println("ke:", ke, ">>> err:", err)
-// 	}
-// 	keyStr += "/description/" + *request.Name
-// 	_, err = client.Put(c, keyStr, *request.Value)
-
-// 	if err != nil {
-// 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ErrcodeMissing, nil, err.Error())}))
-// 		// lh.Debug0().Log()
-// 		return
-// 	}
-
-// 	// lh.Log(fmt.Sprintf("User found: %v", map[string]any{"user": "userResp"}))
-// 	wscutils.SendSuccessResponse(c, wscutils.NewSuccessResponse(map[string]any{"response": "config_set_success"}))
-// }
+	wscutils.SendSuccessResponse(c, &wscutils.Response{Status: "success", Data: container.ResponseData, Messages: []wscutils.ErrorMessage{}})
+}
 
 // bindGetConfigResponse is specifically used in Cinfig_get to bing and set the response
 func bindGetConfigResponse(response *getConfigResponse, queryParams *utils.GetConfigRequestParams, getValue map[string]string) {

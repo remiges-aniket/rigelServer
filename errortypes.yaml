@@ -6,3 +6,4 @@
 "missing": 101
 "schema_not_found": 204
 "invalid_dependency": 205
+"only_numbers_allowed" : 206

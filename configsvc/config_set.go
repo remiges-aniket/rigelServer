@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/remiges-aniket/rigel"
 	"github.com/remiges-aniket/utils"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
 	"github.com/remiges-tech/logharbour/logharbour"
-	"github.com/remiges-aniket/rigel"
 )
 
 type configset struct {

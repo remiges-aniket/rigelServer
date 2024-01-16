@@ -21,6 +21,10 @@ func getConfKeyPath(appName string, moduleName string, version int, namedConfig 
 	return fmt.Sprintf("%s/%s/%s/%d/config/%s/%s", rigelPrefix, appName, moduleName, version, namedConfig, confKey)
 }
 
+func GetConfKeyPath(appName string, moduleName string, version int, namedConfig string, confKey string) string {
+	return fmt.Sprintf("%s/%s/%s/%d/%s/%s", rigelPrefix, appName, moduleName, version, namedConfig, confKey)
+}
+
 // getSchemaDescriptionPath constructs the path for a schema based on the provided appName, moduleName and version.
 func GetSchemaDescriptionPath(appName string, moduleName string, version int) string {
 	return fmt.Sprintf("%s/%s/%s/%d/description", rigelPrefix, appName, moduleName, version)
