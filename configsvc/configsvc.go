@@ -63,6 +63,7 @@ func Config_get(c *gin.Context, s *service.Service) {
 
 	keyStr := utils.RIGELPREFIX + "/" + *queryParams.App + "/" + *queryParams.Module + "/" + strconv.Itoa(queryParams.Version) + "/" + *queryParams.Config
 
+	fmt.Println("KEY:", keyStr)	
 	getValue, err := client.GetWithPrefix(c, keyStr)
 	if err != nil {
 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(wscutils.ErrcodeMissing, nil, err.Error())}))
@@ -70,7 +71,8 @@ func Config_get(c *gin.Context, s *service.Service) {
 		return
 	}
 	// set response fields
-	bindGetConfigResponse(&response, &queryParams, getValue)
+	// bindGetConfigResponse(&response, &queryParams, getValue)
+	bindGetConfigResponse(&response, &getValue)
 
 	lh.Log(fmt.Sprintf("Record found: %v", map[string]any{"key with --prefix": keyStr, "value": response}))
 	// te := make([]*etcdls.Node, 0)
@@ -109,12 +111,10 @@ func Config_list(c *gin.Context, s *service.Service) {
 }
 
 // bindGetConfigResponse is specifically used in Cinfig_get to bing and set the response
-func bindGetConfigResponse(response *getConfigResponse, queryParams *utils.GetConfigRequestParams, getValue map[string]string) {
-	response.App = queryParams.App
-	response.Module = queryParams.Module
-	response.Version = &queryParams.Version
-	response.Config = queryParams.Config
-	for key, vals := range getValue {
+func bindGetConfigResponse(response *getConfigResponse, getValue *map[string]string) {
+	fmt.Println("getValue:", getValue)
+
+	for key, vals := range *getValue {
 
 		arry := strings.Split(key, "/")
 		keyStr := arry[len(arry)-1]
@@ -128,6 +128,12 @@ func bindGetConfigResponse(response *getConfigResponse, queryParams *utils.GetCo
 				Value: vals,
 			})
 		}
+
+		ver, _ := strconv.Atoi(arry[5])
+		response.App = &arry[3]
+		response.Module = &arry[4]
+		response.Version = &ver
+		response.Config = &arry[6]
 
 	}
 }
